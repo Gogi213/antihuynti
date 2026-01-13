@@ -191,11 +191,11 @@ function init() {
     startProcess('secondary');
 
     app.listen(PORT, () => {
-        console.log(`[UI] Дашборд готов к работе: http://localhost:${PORT}`);
+        console.log(`[UI] Dashboard running at http://localhost:${PORT}`);
     });
 
     lbServer.listen(PROXY_PORT, () => {
-        console.log(`[LB] Балансировщик нагрузки запущен: http://localhost:${PROXY_PORT}`);
+        console.log(`[LB] Load Balancer running at http://localhost:${PROXY_PORT}`);
     });
 }
 

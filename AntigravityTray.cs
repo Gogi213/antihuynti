@@ -38,7 +38,7 @@ public class AntigravityTray : Form
         contextMenu.MenuItems.Add("Exit", OnExit);
 
         trayIcon = new NotifyIcon();
-        trayIcon.Text = "Antigravity Proxy (Привет!)"; // Изменено на более непринужденное приветствие
+        trayIcon.Text = "Antigravity Proxy";
         // Convert a standard icon or create one
         trayIcon.Icon = SystemIcons.Application; 
         trayIcon.ContextMenu = contextMenu;
