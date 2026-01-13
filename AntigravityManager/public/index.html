@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Antigravity Manager</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        gray: {
+                            900: '#111827',
+                            800: '#1f2937',
+                            700: '#374151',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .btn {
+                @apply px-4 py-2 rounded font-medium disabled:opacity-50 transition-colors;
+            }
+            .btn-primary {
+                @apply bg-blue-600 hover:bg-blue-700 text-white;
+            }
+            .btn-secondary {
+                @apply bg-gray-700 hover:bg-gray-600 text-white;
+            }
+        }
+        body {
+            @apply bg-gray-900 text-gray-100 h-screen flex flex-col;
+        }
+    </style>
+</head>
+<body class="p-8">
+    <div class="max-w-4xl mx-auto w-full">
+        <header class="flex justify-between items-center mb-10">
+            <div>
+                <h1 class="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-500">
+                    Antigravity Manager
+                </h1>
+                <p class="text-gray-400 mt-1">Local Proxy & Load Balancer • Port 8319</p>
+            </div>
+            <div class="text-sm font-mono bg-gray-800 px-3 py-1 rounded border border-gray-700">
+                http://localhost:8319
+            </div>
+        </header>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <!-- Primary Card -->
+            <div id="card-primary" class="bg-gray-800 rounded-xl p-6 border border-gray-700 shadow-lg">
+                <div class="flex justify-between items-start mb-4">
+                    <div>
+                        <h2 class="text-xl font-semibold text-white">Primary Instance</h2>
+                        <span class="text-sm text-gray-400">Port 8317 • Paid Account</span>
+                    </div>
+                    <div id="status-dot-primary" class="w-3 h-3 rounded-full bg-red-500 shadow-[0_0_10px_rgba(239,68,68,0.5)]"></div>
+                </div>
+                
+                <div class="space-y-3 mt-6">
+                    <div class="flex gap-2">
+                        <button onclick="action('primary', 'login')" class="btn btn-primary flex-1">
+                            Reconnect / Login
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Secondary Card -->
+            <div id="card-secondary" class="bg-gray-800 rounded-xl p-6 border border-gray-700 shadow-lg">
+                <div class="flex justify-between items-start mb-4">
+                    <div>
+                        <h2 class="text-xl font-semibold text-white">Secondary Instance</h2>
+                        <span class="text-sm text-gray-400">Port 8318 • Free Account</span>
+                    </div>
+                    <div id="status-dot-secondary" class="w-3 h-3 rounded-full bg-red-500 shadow-[0_0_10px_rgba(239,68,68,0.5)]"></div>
+                </div>
+                
+                <div class="space-y-3 mt-6">
+                    <div class="flex gap-2">
+                        <button onclick="action('secondary', 'login')" class="btn btn-primary flex-1">
+                            Reconnect / Login
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="mt-8 bg-gray-800 rounded-xl p-6 border border-gray-700">
+            <h3 class="text-lg font-semibold mb-2">System Status</h3>
+            <div class="flex gap-4 text-sm text-gray-400">
+                <div class="flex items-center gap-2">
+                    <span class="w-2 h-2 rounded-full bg-green-500"></span>
+                    Load Balancer Active
+                </div>
+                <div class="flex items-center gap-2">
+                    <span class="w-2 h-2 rounded-full bg-green-500"></span>
+                    UI Dashboard Active
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        async function updateStatus() {
+            try {
+                const res = await fetch('/api/status');
+                const data = await res.json();
+                
+                updateCard('primary', data.primary);
+                updateCard('secondary', data.secondary);
+            } catch (e) {
+                console.error(e);
+            }
+        }
+
+        function updateCard(id, info) {
+            // info = { active: boolean, user: string|null }
+            const dot = document.getElementById(`status-dot-${id}`);
+            const subtext = document.querySelector(`#card-${id} span`);
+            const btnContainer = document.querySelector(`#card-${id} .space-y-3`);
+            
+            if (info.active) {
+                dot.className = "w-3 h-3 rounded-full bg-green-500 shadow-[0_0_10px_rgba(34,197,94,0.5)] transition-all duration-300";
+            } else {
+                dot.className = "w-3 h-3 rounded-full bg-red-500 shadow-[0_0_10px_rgba(239,68,68,0.5)] transition-all duration-300";
+            }
+
+            // Update user info
+            if (info.user) {
+                // If user is logged in, show their email
+                // Regex to format "antigravity-test_strenin_gmail_com.json" -> "test.strenin@gmail.com"
+                let email = info.user.replace('antigravity-', '').replace('.json', '');
+                // Try to guess formatting: replace last underscore with dot? No, email structure varies.
+                // Best effort: replace all underscores with dots, but @?
+                // Actually the filename format is specific. Let's just show the raw for now or minimal cleanup.
+                // Start generic cleanup
+                email = email.replace(/_/g, '.').replace('.com', '@gmail.com'); // Heuristic
+                
+                subtext.innerHTML = `<span class="text-green-400 font-mono">${email}</span>`;
+                
+                // Show Logout Button
+                btnContainer.innerHTML = `
+                    <div class="flex gap-2">
+                        <button onclick="action('${id}', 'login')" class="btn btn-secondary flex-1 text-xs">
+                            Reconnect
+                        </button>
+                        <button onclick="action('${id}', 'logout')" class="btn bg-red-900/50 hover:bg-red-800 text-red-200 border border-red-800 flex-1 text-xs">
+                            Logout
+                        </button>
+                    </div>
+                `;
+            } else {
+                subtext.innerHTML = `<span class="text-yellow-500">Not Authenticated</span>`;
+                btnContainer.innerHTML = `
+                    <div class="flex gap-2">
+                        <button onclick="action('${id}', 'login')" class="btn btn-primary flex-1">
+                            Connect / Login
+                        </button>
+                    </div>
+                `;
+            }
+        }
+
+        async function action(id, act) {
+            try {
+                if (act === 'logout' && !confirm('Are you sure you want to logout?')) return;
+                
+                await fetch('/api/action', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ id, action: act })
+                });
+                // Immediate refresh attempt
+                setTimeout(updateStatus, 500);
+            } catch (e) {
+                alert('Action failed: ' + e.message);
+            }
+        }
+
+        // Poll status every 2 seconds
+        setInterval(updateStatus, 2000);
+        updateStatus();
+    </script>
+</body>
+</html>
