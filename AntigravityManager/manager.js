@@ -94,8 +94,7 @@ function getAuthInfo(id) {
             // Antigravity saves as test_strenin_gmail_com. Let's just return it as is or try to format
             return raw.replace(/_/g, '.').replace('.com', '@gmail.com'); // Rough guess, or just return raw
             // Better: read file and look for "account" field if possible?
-            // Let's stick to returning the raw filename part or a formatted version if confident.
-            // Actually, best to return the filename part for now, it's readable enough.
+            // Let's stick to returning the raw filename part for now, it's readable enough.
             return authFile;
         }
     } catch (e) {
@@ -192,11 +191,11 @@ function init() {
     startProcess('secondary');
 
     app.listen(PORT, () => {
-        console.log(`[UI] Dashboard running at http://localhost:${PORT}`);
+        console.log(`[UI] Дашборд готов к работе: http://localhost:${PORT}`);
     });
 
     lbServer.listen(PROXY_PORT, () => {
-        console.log(`[LB] Load Balancer running at http://localhost:${PROXY_PORT}`);
+        console.log(`[LB] Балансировщик нагрузки запущен: http://localhost:${PROXY_PORT}`);
     });
 }
 
