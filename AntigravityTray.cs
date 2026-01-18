@@ -11,7 +11,6 @@ public class AntigravityTray : Form
     private NotifyIcon trayIcon;
     private ContextMenu contextMenu;
     private MenuItem primaryItem;
-    private MenuItem secondaryItem;
     private Process managerProcess;
     private Timer statusTimer;
     private bool isExiting = false;
@@ -27,12 +26,10 @@ public class AntigravityTray : Form
         contextMenu = new ContextMenu();
         
         primaryItem = new MenuItem("Primary: Checking...", (s, e) => Action("primary", "login"));
-        secondaryItem = new MenuItem("Secondary: Checking...", (s, e) => Action("secondary", "login"));
         
-        contextMenu.MenuItems.Add("Antigravity Round Robin Proxy");
+        contextMenu.MenuItems.Add("Antigravity Proxy");
         contextMenu.MenuItems.Add("-");
         contextMenu.MenuItems.Add(primaryItem);
-        contextMenu.MenuItems.Add(secondaryItem);
         contextMenu.MenuItems.Add("-");
         contextMenu.MenuItems.Add("Open Dashboard (Web)", (s, e) => Process.Start("http://localhost:8320"));
         contextMenu.MenuItems.Add("Exit", OnExit);
@@ -83,24 +80,18 @@ public class AntigravityTray : Form
                 string json = client.DownloadString("http://localhost:8320/api/status");
                 // JSON structure: 
                 // { 
-                //   "primary": { "active": true, "user": "antigravity-xyz.json" }, 
-                //   "secondary": { "active": false, "user": null } 
+                //   "primary": { "active": true, "user": "antigravity-xyz.json" }
                 // }
                 
                 bool pActive = json.Contains("\"primary\":{\"active\":true");
-                bool sActive = json.Contains("\"secondary\":{\"active\":true");
-                
                 string pUser = ParseUser(json, "primary");
-                string sUser = ParseUser(json, "secondary");
 
                 UpdateItem(primaryItem, "Primary", pActive, pUser);
-                UpdateItem(secondaryItem, "Secondary", sActive, sUser);
             }
         }
         catch
         {
             primaryItem.Text = "Primary: Disconnected";
-            secondaryItem.Text = "Secondary: Disconnected";
         }
     }
 

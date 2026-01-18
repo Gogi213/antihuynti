@@ -15,19 +15,16 @@ app.use(express.json());
 
 // Configuration
 const DIRECTORIES = {
-    primary: path.resolve(__dirname, '../CLIProxyAPIPlus'),
-    secondary: path.resolve(__dirname, '../CLIProxyAPIPlus_Secondary')
+    primary: path.resolve(__dirname, '../CLIProxyAPIPlus')
 };
 
 const PORTS = {
-    primary: 8317,
-    secondary: 8318
+    primary: 8317
 };
 
 // Process Store
 const processes = {
-    primary: null,
-    secondary: null
+    primary: null
 };
 
 // Helper: Start Process
@@ -78,9 +75,7 @@ const os = require('os');
 // Helper: Get Auth Info
 function getAuthInfo(id) {
     const home = os.homedir();
-    const authDir = id === 'primary'
-        ? path.join(home, '.cli-proxy-api')
-        : path.join(home, '.cli-proxy-api-secondary');
+    const authDir = path.join(home, '.cli-proxy-api');
 
     if (!fs.existsSync(authDir)) return null;
 
@@ -94,7 +89,8 @@ function getAuthInfo(id) {
             // Antigravity saves as test_strenin_gmail_com. Let's just return it as is or try to format
             return raw.replace(/_/g, '.').replace('.com', '@gmail.com'); // Rough guess, or just return raw
             // Better: read file and look for "account" field if possible?
-            // Let's stick to returning the raw filename part for now, it's readable enough.
+            // Let's stick to returning the raw filename part or a formatted version if confident.
+            // Actually, best to return the filename part for now, it's readable enough.
             return authFile;
         }
     } catch (e) {
@@ -116,9 +112,7 @@ function logoutProcess(id) {
 
     // 2. Delete auth file
     const home = os.homedir();
-    const authDir = id === 'primary'
-        ? path.join(home, '.cli-proxy-api')
-        : path.join(home, '.cli-proxy-api-secondary');
+    const authDir = path.join(home, '.cli-proxy-api');
 
     if (fs.existsSync(authDir)) {
         const files = fs.readdirSync(authDir);
@@ -139,63 +133,32 @@ app.get('/api/status', (req, res) => {
     // Check if process is running (pid check)
     // AND check if auth file exists
 
-    const pActive = !!processes.primary; // Simple check, maybe improve later
-    const sActive = !!processes.secondary;
-
+    const pActive = !!processes.primary;
     const pAuth = getAuthInfo('primary');
-    const sAuth = getAuthInfo('secondary');
 
     res.json({
-        primary: { active: pActive, user: pAuth },
-        secondary: { active: sActive, user: sAuth }
+        primary: { active: pActive, user: pAuth }
     });
 });
 
 app.post('/api/action', (req, res) => {
     const { id, action } = req.body;
-    if (!['primary', 'secondary'].includes(id)) return res.status(400).send('Invalid ID');
+    if (id !== 'primary') return res.status(400).send('Invalid ID');
 
     if (action === 'start') startProcess(id);
-    if (action === 'stop') { /* ... */ } // existing
+    if (action === 'stop') { /* ... */ }
     if (action === 'login') loginProcess(id);
     if (action === 'logout') logoutProcess(id);
 
     res.json({ success: true });
 });
 
-// Load Balancer (Native HTTP Server for better control than Express for proxying)
-const http = require('http');
-const targets = [
-    `http://localhost:${PORTS.primary}`,
-    `http://localhost:${PORTS.secondary}`
-];
-let currentIndex = 0;
-
-const lbServer = http.createServer((req, res) => {
-    const target = targets[currentIndex];
-    // Simple round robin
-    currentIndex = (currentIndex + 1) % targets.length;
-
-    console.log(`[LB] ${req.method} ${req.url} -> ${target}`);
-
-    proxy.web(req, res, { target }, (e) => {
-        console.error(`[LB] Proxy error: ${e.message}`);
-        res.statusCode = 502;
-        res.end('Bad Gateway / Proxy Error');
-    });
-});
-
 // Start everything
 function init() {
     startProcess('primary');
-    startProcess('secondary');
 
     app.listen(PORT, () => {
         console.log(`[UI] Dashboard running at http://localhost:${PORT}`);
-    });
-
-    lbServer.listen(PROXY_PORT, () => {
-        console.log(`[LB] Load Balancer running at http://localhost:${PROXY_PORT}`);
     });
 }
 
